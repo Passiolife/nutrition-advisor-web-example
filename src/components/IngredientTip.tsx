@@ -1,8 +1,8 @@
+import { types } from "passio-nutrition-advisor-client";
 import React from "react";
-import { OutgoingSearchResult } from "../types/types";
 
 interface TooltipCardProps {
-    ingredientData: OutgoingSearchResult;
+    ingredientData: types.OutgoingSearchResult;
 }
 
 const TooltipCard: React.FC<

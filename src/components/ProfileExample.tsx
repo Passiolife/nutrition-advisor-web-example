@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 
-import { UserProfileData } from "../types/types";
+import { types } from "passio-nutrition-advisor-client";
+
 import { APIClientContext } from "../context/AdvisorClientContext";
 
 interface FormModalProps {
@@ -10,7 +11,8 @@ interface FormModalProps {
 
 const ExampleProfileForm: React.FC<FormModalProps> = ({ isOpen, onClose }) => {
     const { userProfile, setUserProfile } = useContext(APIClientContext);
-    const [formData, setFormData] = useState<UserProfileData>(userProfile);
+    const [formData, setFormData] =
+        useState<types.UserProfileData>(userProfile);
 
     useEffect(() => {
         if (userProfile) {

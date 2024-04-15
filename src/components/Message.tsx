@@ -1,17 +1,18 @@
+import { types } from "passio-nutrition-advisor-client";
 import React, {
-    useState,
-    useEffect,
     MouseEvent,
     useContext,
+    useEffect,
     useMemo,
+    useState,
 } from "react";
-import { Message, OutgoingSearchResult } from "../types/types";
+
 import Markdown from "react-markdown";
 import { APIClientContext } from "../context/AdvisorClientContext";
 
 interface MessageProps {
     onContextMenuClick: (messageId: string, action: string) => void; // Define the prop type
-    message: Message;
+    message: types.Message;
 }
 
 const MessageComponent: React.FC<MessageProps> = ({
@@ -116,9 +117,9 @@ const MessageComponent: React.FC<MessageProps> = ({
         let mc = getToolRunResultsForMessage(message.id);
         let mcw = mc.find((m) => m.messageId === message.id);
         if (!mcw) return;
-        const ingredient = (mcw.content as OutgoingSearchResult[]).find(
+        const ingredient = (mcw.content as types.OutgoingSearchResult[]).find(
             (item) => item.ingredientName === name
-        ) as OutgoingSearchResult;
+        ) as types.OutgoingSearchResult;
         if (ingredient === undefined) return;
         setIngredientForHover(ingredient, event.clientX, event.clientY);
     }

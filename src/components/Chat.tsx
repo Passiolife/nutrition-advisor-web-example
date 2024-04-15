@@ -1,18 +1,16 @@
-// Chat.tsx
-
-import React, { useContext, useEffect, useState } from "react";
-import MessageComponent from "./Message";
-import InputArea from "./InputArea";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { APIClientContext } from "../context/AdvisorClientContext";
-import AdvisorThinkingComponent from "./ThinkingIndicator";
-import { Card, CardBody } from "@material-tailwind/react";
 import { ReactComponent as Avatar } from "../svg/advisor.svg";
 import { ReactComponent as Gear } from "../svg/gear.svg";
-import ProfileExample from "./ProfileExample";
 import TooltipCard from "./IngredientTip";
+import InputArea from "./InputArea";
+import MessageComponent from "./Message";
+import ProfileExample from "./ProfileExample";
+import AdvisorThinkingComponent from "./ThinkingIndicator";
 
 const Chat: React.FC = () => {
     const {
+        apiClient,
         setUserProfile,
         messages,
         sendMessage,
@@ -22,10 +20,28 @@ const Chat: React.FC = () => {
         activeIngredientHoverContent,
     } = useContext(APIClientContext);
 
+    const [apiReady, setApiReady] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const delayedEffect = React.useCallback(() => {
-        const timer = setTimeout(() => {
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    useEffect(() => {
+        if (apiClient) {
+            apiClient.waitForReady(3000).then((r) => {
+                setApiReady(r);
+            });
+        }
+    }, [apiClient]);
+
+    useEffect(() => {
+        if (apiReady) {
             const storedData = localStorage.getItem("formData");
             if (storedData) {
                 try {
@@ -35,22 +51,13 @@ const Chat: React.FC = () => {
                     console.error("Failed to parse stored data");
                 }
             }
-        }, 1100);
-
-        return () => clearTimeout(timer);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [availableTools]);
-
-    useEffect(() => {
-        delayedEffect();
-    }, [delayedEffect]);
+    }, [apiReady]);
 
     return (
         <div className="flex justify-center items-center h-screen">
-            <Card
-                shadow
-                className="flex flex-col bg-gray-50 w-5/6 h-5/6 rounded-lg"
-            >
+            <div className="flex flex-col bg-gray-50 w-5/6 h-5/6 rounded-lg">
                 <div className="bg-white flex-col justify-start items-start inline-flex">
                     <div className="self-stretch px-6 py-5 justify-between items-center inline-flex">
                         <div className="justify-start items-center gap-4 flex">
@@ -68,7 +75,7 @@ const Chat: React.FC = () => {
                     </div>
                     <div className="self-stretch h-px bg-gray-200" />
                 </div>
-                <CardBody className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto">
                     {messages.map((message) => (
                         <MessageComponent
                             key={message.id}
@@ -85,10 +92,11 @@ const Chat: React.FC = () => {
                             }}
                         />
                     ))}
-                </CardBody>
+                    <div ref={messagesEndRef} />
+                </div>
                 {advisorThinking && <AdvisorThinkingComponent />}
                 <InputArea disable={false} onSend={sendMessage} />
-            </Card>
+            </div>
             {isModalOpen && (
                 <ProfileExample
                     isOpen={isModalOpen}

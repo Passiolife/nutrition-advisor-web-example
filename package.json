@@ -1,42 +1,40 @@
 {
   "name": "nadvisor-chatui",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@material-tailwind/react": "^2.1.9",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.93",
-    "@types/react": "18.2.19",
+    "@types/node": "^18.19.31",
+    "@types/react": "^18.2.19",
     "@types/react-dom": "^18.2.23",
-    "axios": "^1.6.8",
+    "passio-nutrition-advisor-client": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
     "react-scripts": "5.0.1",
     "tailwind": "^4.0.0",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "typescript": "^4.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "sh -ac '. ./.env.${REACT_APP_ENV}; yarn run bt && react-scripts build'",
-    "build:dev": "REACT_APP_ENV=development yarn run build",
-    "build:production": "REACT_APP_ENV=production yarn run build",
     "wt": "npx tailwindcss -i src/index.css -o ./src/tailwind.css --watch",
     "bt": "npx tailwindcss src/index.css -o src/tailwind.css --minify",
-    "deploy-dev": "yarn build:dev && gcloud config set project passio-dev-env && gsutil -m -h \"Cache-Control:private, max-age=0, no-transform\" rsync -r build gs://passio-nutrition-advisor-dev",
-    "deploy-prod": "yarn build:production && gcloud config set project passio-prod-env && gsutil -m rsync -r build gs://passio-nutrition-advisor-dev",
-    "test": "react-scripts test",
+    "build": "source .env.development && eval $BUILD",
+    "build:dev": "source .env.development && eval $BUILD_DEV",
+    "build:production": "source .env.development && eval $BUILD_PRODUCTION",
+    "deploy-dev": "source .env.development && eval $DEPLOY_DEV",
+    "deploy-prod": "source .env.development && eval $DEPLOY_PROD",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "latest",
+    "@tailwindcss/typography": "latest",
+    "autoprefixer": "^10.4.19",
+    "tailwindcss": "latest"
   },
   "browserslist": {
     "production": [
@@ -49,11 +47,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@tailwindcss/forms": "latest",
-    "@tailwindcss/typography": "latest",
-    "autoprefixer": "^10.4.19",
-    "tailwindcss": "latest"
   }
 }

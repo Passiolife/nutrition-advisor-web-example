@@ -1,40 +1,36 @@
-// AdvisorClientContext.tsx
+import { AdvisorClient, types } from "passio-nutrition-advisor-client";
+import React, { createContext, useEffect, useState } from "react";
 
-import React, { createContext, useState, useEffect } from "react";
-import APIClient from "../client/AdvisorClient";
-import {
-    UserProfileData,
-    IngredientHoverContent,
-    Message,
-    OutgoingSearchResult,
-    ToolFunctionDefinition,
-    ToolRunResult,
-} from "../types/types";
-
+/**
+ * Represents the props for the APIClientContext component.
+ */
 interface APIClientContextProps {
-    apiClient: APIClient | null;
-    userProfile: UserProfileData;
-    setUserProfile: (profile: UserProfileData) => void;
-    messages: Message[];
+    apiClient: AdvisorClient | null;
+    userProfile: types.UserProfileData;
+    setUserProfile: (profile: types.UserProfileData) => void;
+    messages: types.Message[];
     sendMessage: (content: string) => Promise<void>;
-    availableTools: ToolFunctionDefinition[];
+    availableTools: types.ToolFunctionDefinition[];
     advisorThinking: boolean;
     sendToolRequest: (
         targetMessageId: string,
-        tool: ToolFunctionDefinition
+        tool: types.ToolFunctionDefinition
     ) => Promise<void>;
-    getToolRunResultsForMessage: (messageId: string) => ToolRunResult[];
-    activeIngredientHoverContent: IngredientHoverContent | null;
+    getToolRunResultsForMessage: (messageId: string) => types.ToolRunResult[];
+    activeIngredientHoverContent: types.IngredientHoverContent | null;
     setIngredientForHover: (
-        item: OutgoingSearchResult | null,
+        item: types.OutgoingSearchResult | null,
         x: number,
         y: number
     ) => void;
 }
 
+/**
+ * Context for the API client used in the Advisor client.
+ */
 export const APIClientContext = createContext<APIClientContextProps>({
     apiClient: null,
-    userProfile: {} as UserProfileData,
+    userProfile: {} as types.UserProfileData,
     setUserProfile: () => {},
     messages: [],
     sendMessage: async () => {},
@@ -48,29 +44,29 @@ export const APIClientContext = createContext<APIClientContextProps>({
 
 interface APIClientProviderProps {
     children: React.ReactNode;
-    baseURL: string;
     licenseKey: string;
+    baseURL?: string;
 }
 
+/**
+ * Provides the API client context for the AdvisorClient.
+ * @param baseURL The base URL for the API.
+ * @param licenseKey The license key for the API.
+ */
 export const APIClientProvider: React.FC<APIClientProviderProps> = ({
     children,
-    baseURL,
     licenseKey,
+    baseURL,
 }) => {
-    const [apiClient, setApiClient] = useState<APIClient | null>(null);
-
-    const [userProfile, setUserProfile] = useState<UserProfileData>(
-        {} as UserProfileData
+    const [apiClient, setApiClient] = useState<AdvisorClient | null>(null);
+    const [userProfile, setUserProfile] = useState<types.UserProfileData>(
+        {} as types.UserProfileData
     );
-    const [messages, setMessages] = useState<Message[]>([
+    const [messages, setMessages] = useState<types.Message[]>([
         {
             id: "0",
             type: "system-message",
-            content: `Welcome${
-                " " + userProfile !== undefined && userProfile
-                    ? userProfile.name
-                    : ""
-            }! I am your AI Nutrition Advisor!
+            content: `Welcome! I am your AI Nutrition Advisor!
 
 ##### You can ask me things like:
 - *How many calories are in ...?*
@@ -85,26 +81,29 @@ Lets chat!`,
         },
     ]);
     const [availableTools, setAvailableTools] = useState<
-        ToolFunctionDefinition[]
+        types.ToolFunctionDefinition[]
     >([]);
     const [advisorThinking, setAdvisorThinking] = useState<boolean>(false);
-    const [toolRunResults, setToolRunResults] = useState<ToolRunResult[]>();
+    const [toolRunResults, setToolRunResults] =
+        useState<types.ToolRunResult[]>();
     const [activeIngredientHoverContent, setActiveIngredientHoverContent] =
-        useState<IngredientHoverContent | null>(null);
+        useState<types.IngredientHoverContent | null>(null);
 
     useEffect(() => {
+        /**
+         * Initializes the Advisor API client and sets up the necessary data for the chat UI.
+         * @returns {Promise<void>} A promise that resolves once the initialization is complete.
+         */
         const initializeAPIClient = async () => {
-            const client = new APIClient(baseURL, licenseKey);
+            const client = new AdvisorClient(licenseKey, baseURL);
             await client.fetchToken();
             setApiClient(client);
 
             const tools = await client.getAvailableTools();
             setAvailableTools(tools);
 
-            // get thread ID here if needed
             await client.beginConversationThread();
 
-            // Load user profile data from local storage
             const storedProfileData = localStorage.getItem("userProfile");
             if (storedProfileData) {
                 try {
@@ -122,7 +121,14 @@ Lets chat!`,
         initializeAPIClient();
     }, [baseURL, licenseKey]);
 
-    function getToolRunResultsForMessage(messageId: string): ToolRunResult[] {
+    /**
+     * Retrieves the tool run results for a specific message.
+     * @param messageId The ID of the message.
+     * @returns An array of tool run results for the message.
+     */
+    function getToolRunResultsForMessage(
+        messageId: string
+    ): types.ToolRunResult[] {
         return (
             toolRunResults?.filter(
                 (result) => result.messageId === messageId
@@ -130,16 +136,23 @@ Lets chat!`,
         );
     }
 
+    /**
+     * Updates the content of a message with ingredient search results.
+     * @param messageId The ID of the message to update.
+     * @param items The search result items to update the message with.
+     * @returns An array containing the updated message and its index in the messages array.
+     */
     function updateMessageContent(
         messageId: string,
-        items: OutgoingSearchResult[]
-    ): [Message, number] {
-        let nm = messages.find((m) => m.id === messageId) as Message;
+        items: types.OutgoingSearchResult[]
+    ): [types.Message, number] {
+        let nm = messages.find((m) => m.id === messageId) as types.Message;
         const tgtInd = messages.findIndex((m) => m.id === messageId);
-        let doneIngreidents = [] as string[];
+        let doneIngredients = [] as string[];
+
         for (let i = 0; i < items.length; i++) {
-            if (doneIngreidents.includes(items[i].ingredientName)) continue;
-            doneIngreidents.push(items[i].ingredientName);
+            if (doneIngredients.includes(items[i].ingredientName)) continue;
+            doneIngredients.push(items[i].ingredientName);
 
             const imgUrl = `https://storage.googleapis.com/passio-prod-env-public-cdn-data/label-icons/${items[i].iconId}-90.jpg`;
             let iconStr = `![Icon](${imgUrl})`;
@@ -155,11 +168,18 @@ Lets chat!`,
                 `${items[i].iconId !== "" ? iconStr + " " + linkStr : linkStr}`
             );
         }
+
         return [nm, tgtInd];
     }
 
+    /**
+     * Sets the ingredient data for hovering.
+     * @param item The ingredient search result item.
+     * @param x The x-coordinate of the hover position.
+     * @param y The y-coordinate of the hover position.
+     */
     const setIngredientForHover = async (
-        item: OutgoingSearchResult | null,
+        item: types.OutgoingSearchResult | null,
         x: number,
         y: number
     ) => {
@@ -174,12 +194,14 @@ Lets chat!`,
         });
     };
 
-    const updateUserProfile = async (profile: UserProfileData) => {
+    /**
+     * Updates the user profile and sends it to the advisor.
+     * @param profile The updated user profile data.
+     */
+    const updateUserProfile = async (profile: types.UserProfileData) => {
         setUserProfile(profile);
-        // Store the updated user profile data in local storage
         localStorage.setItem("userProfile", JSON.stringify(profile));
         const reduced = { ...profile, mealLogs: null };
-        // Send the update to the advisor
         await sendMessage(
             `User profile updated. Do not respond with any advice or information. Acknowledge you received their profile, and that you understand their information. Profile data: ${JSON.stringify(
                 reduced,
@@ -190,6 +212,12 @@ Lets chat!`,
         );
     };
 
+    /**
+     * Sends a message to the advisor and handles the response.
+     * @param content The content of the message.
+     * @param hideOutgoing Flag indicating whether to hide the outgoing message.
+     * @param autoDetectLogs Flag indicating whether to auto-detect meal logs.
+     */
     const sendMessage = async (
         content: string,
         hideOutgoing: boolean = false,
@@ -200,8 +228,9 @@ Lets chat!`,
             return;
         }
 
+        // unless were sending a behind the scenes message, add it to the chat
         if (!hideOutgoing) {
-            const newMessage: Message = {
+            const newMessage: types.Message = {
                 id: Date.now().toString(),
                 type: "user-message",
                 content,
@@ -216,20 +245,15 @@ Lets chat!`,
                 autoDetectLogs
             );
             if (response) {
-                // prepare response display object
-                const advisorMessage: Message = {
+                const advisorMessage: types.Message = {
                     id: response.messageId,
                     type: "advisor-message",
                     content: response.content,
                 };
 
-                // Handle Data requests, if exist
                 if (response.dataRequest) {
                     switch (response.dataRequest?.Name) {
                         case "DetectMealLogsRequired":
-                            // The request contains a number value signifying how many days of logs were requested, so you can
-                            // minimze data required to be sent and reduce tokens. For this example, since profiles are small and ephemeral,
-                            // im ignoring it and sending all data
                             let ar = await apiClient.handleDataRequest(
                                 response,
                                 JSON.stringify(
@@ -257,9 +281,14 @@ Lets chat!`,
         }
     };
 
+    /**
+     * Sends a tool request to the advisor and handles the response.
+     * @param targetMessageId The ID of the target message.
+     * @param tool The tool function definition.
+     */
     const sendToolRequest = async (
         targetMessageId: string,
-        tool: ToolFunctionDefinition
+        tool: types.ToolFunctionDefinition
     ) => {
         if (!apiClient) {
             console.error("APIClient is not initialized.");
@@ -273,19 +302,18 @@ Lets chat!`,
                 tool.name
             );
             if (response) {
-                let result: ToolRunResult = {
+                let result: types.ToolRunResult = {
                     messageId: targetMessageId,
                     toolName: tool.name,
                     toolDisplayName: tool.displayName,
                     content: response.actionResponse?.data || "",
                 };
 
-                // Handle different tools data responses as necessary. See docs
                 switch (tool.name) {
                     case "SearchIngredientMatches":
                         const items = JSON.parse(
                             response.actionResponse?.data || "[]"
-                        ) as OutgoingSearchResult[];
+                        ) as types.OutgoingSearchResult[];
                         result.content = items;
                         setToolRunResults((prevResults) => [
                             ...(prevResults || []),

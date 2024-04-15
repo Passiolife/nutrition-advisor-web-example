@@ -1,9 +1,7 @@
-// App.tsx
-
 import "./App.css";
-import "./tailwind.css";
 import Chat from "./components/Chat";
 import { APIClientProvider } from "./context/AdvisorClientContext";
+import "./tailwind.css";
 
 function App() {
     return (
