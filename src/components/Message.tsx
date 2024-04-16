@@ -41,7 +41,7 @@ const MessageComponent: React.FC<MessageProps> = ({
                     ),
                     a: ({ node, ...props }) => (
                         <a
-                            className="text-blue-500 underline"
+                            className="text-indigo-500"
                             target="_blank"
                             onMouseEnter={(
                                 event: MouseEvent<HTMLAnchorElement>
@@ -164,7 +164,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     }`;
 
     const filteredTools = availableTools?.filter(
-        (tool) => tool.type === "target-message"
+        (tool) => tool.type === "target"
     );
 
     return (
@@ -177,8 +177,14 @@ const MessageComponent: React.FC<MessageProps> = ({
             }`}
             onContextMenu={handleRightClick}
         >
-            <div className={messageBubbleStyle}>{memoizedMarkdown}</div>
-            {showMenu && (
+            <div className={messageBubbleStyle}>
+                {message.type !== "raw-message" ? (
+                    memoizedMarkdown
+                ) : (
+                    <img src={message.content} alt="" />
+                )}
+            </div>
+            {showMenu && message.type === "advisor-message" && (
                 <ul
                     className="context-menu absolute bg-white shadow-lg rounded-lg p-1 z-10 w-56 flex flex-col justify-start items-start"
                     style={{

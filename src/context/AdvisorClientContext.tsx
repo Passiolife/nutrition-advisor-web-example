@@ -12,8 +12,12 @@ interface APIClientContextProps {
     sendMessage: (content: string) => Promise<void>;
     availableTools: types.ToolFunctionDefinition[];
     advisorThinking: boolean;
-    sendToolRequest: (
+    sendTargetToolRequest: (
         targetMessageId: string,
+        tool: types.ToolFunctionDefinition
+    ) => Promise<void>;
+    sendVisionToolRequest: (
+        req: types.AdvisorIncomingVisionRequest,
         tool: types.ToolFunctionDefinition
     ) => Promise<void>;
     getToolRunResultsForMessage: (messageId: string) => types.ToolRunResult[];
@@ -36,7 +40,8 @@ export const APIClientContext = createContext<APIClientContextProps>({
     sendMessage: async () => {},
     availableTools: [],
     advisorThinking: false,
-    sendToolRequest: async () => {},
+    sendTargetToolRequest: async () => {},
+    sendVisionToolRequest: async () => {},
     getToolRunResultsForMessage: () => [],
     activeIngredientHoverContent: null,
     setIngredientForHover: async () => {},
@@ -240,11 +245,14 @@ Lets chat!`,
 
         try {
             setAdvisorThinking(true);
-            const response = await apiClient.sendUserMessage(
-                content,
-                autoDetectLogs
-            );
+            // hardcode enable meal log detection
+            const req: types.AdvisorIncomingMessageRequest = {
+                message: content,
+                inputSensors: ["DetectMealLogsRequired"],
+            };
+            const response = await apiClient.sendUserMessage(req);
             if (response) {
+                // create the advisors response msg
                 const advisorMessage: types.Message = {
                     id: response.messageId,
                     type: "advisor-message",
@@ -254,13 +262,14 @@ Lets chat!`,
                 if (response.dataRequest) {
                     switch (response.dataRequest?.name) {
                         case "DetectMealLogsRequired":
-                            let ar = await apiClient.handleDataRequest(
-                                response,
-                                JSON.stringify(
-                                    userProfile?.mealLogs ||
-                                        "Respond telling me I don't actually have any meal logs stored to review."
-                                )
-                            );
+                            const req: types.AdvisorIncomingDataRequestResponse =
+                                {
+                                    messageId: response.messageId,
+                                    runId: response.dataRequest.runId,
+                                    toolCallId: response.dataRequest.toolCallId,
+                                    data: JSON.stringify(userProfile?.mealLogs),
+                                };
+                            let ar = await apiClient.respondToDataRequest(req);
                             advisorMessage.id = ar?.messageId || "";
                             advisorMessage.content = ar?.content || "";
                             break;
@@ -286,7 +295,7 @@ Lets chat!`,
      * @param targetMessageId The ID of the target message.
      * @param tool The tool function definition.
      */
-    const sendToolRequest = async (
+    const sendTargetToolRequest = async (
         targetMessageId: string,
         tool: types.ToolFunctionDefinition
     ) => {
@@ -297,8 +306,11 @@ Lets chat!`,
 
         try {
             setAdvisorThinking(true);
-            const response = await apiClient.sendToolRequest(
-                targetMessageId,
+            const req: types.AdvisorIncomingTargetRequest = {
+                messageId: targetMessageId,
+            };
+            const response = await apiClient.sendTargetToolRequest(
+                req,
                 tool.name
             );
             if (response) {
@@ -340,6 +352,86 @@ Lets chat!`,
         }
     };
 
+    const sendVisionToolRequest = async (
+        request: types.AdvisorIncomingVisionRequest,
+        tool: types.ToolFunctionDefinition
+    ) => {
+        if (!apiClient) {
+            console.error("APIClient is not initialized.");
+            return;
+        }
+
+        try {
+            setAdvisorThinking(true);
+            const response = await apiClient.sendVisionToolRequest(
+                request,
+                tool.name
+            );
+            if (response) {
+                let result: types.ToolRunResult = {
+                    messageId: Date.now().toString(),
+                    toolName: tool.name,
+                    toolDisplayName: tool.displayName,
+                    content: response.actionResponse?.data || "",
+                };
+
+                switch (tool.name) {
+                    case "VisualFoodExtraction":
+                        const items = JSON.parse(
+                            response.actionResponse?.data || "[]"
+                        ) as types.OutgoingSearchResult[];
+                        result.content = items;
+
+                        setToolRunResults((prevResults) => [
+                            ...(prevResults || []),
+                            result,
+                        ]);
+
+                        let content = `### Heres what I found
+&nbsp;`;
+                        for (let i = 0; i < items.length; i++) {
+                            const imgUrl = `https://storage.googleapis.com/passio-prod-env-public-cdn-data/label-icons/${items[i].iconId}-90.jpg`;
+                            let iconStr = `![Icon](${imgUrl})`;
+
+                            let linkStr = `[${items[i].ingredientName}](${
+                                process.env.REACT_APP_API_BASE
+                            }/products/food/search/results/${
+                                items[i].labelId ||
+                                "00000000-0000-0000-0000-000000000000"
+                            }/${items[i].type}/${items[i].resultId})`;
+
+                            content = `
+${content}
+- ${items[i].iconId !== "" ? iconStr : ""} ${linkStr}\n
+  - ${items[i].portionSize} _~ ${items[i].weightGrams}g_\n
+`;
+                        }
+
+                        setMessages((prevMessages) => [
+                            ...prevMessages,
+                            {
+                                id: Date.now().toString(),
+                                type: "raw-message",
+                                content: request.image,
+                            },
+                            {
+                                id: result.messageId,
+                                type: "advisor-message",
+                                content,
+                            },
+                        ]);
+                        break;
+                    default:
+                        throw new Error("Unhandled tool");
+                }
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+        } finally {
+            setAdvisorThinking(false);
+        }
+    };
+
     return (
         <APIClientContext.Provider
             value={{
@@ -350,7 +442,8 @@ Lets chat!`,
                 sendMessage,
                 availableTools,
                 advisorThinking,
-                sendToolRequest,
+                sendTargetToolRequest: sendTargetToolRequest,
+                sendVisionToolRequest: sendVisionToolRequest,
                 getToolRunResultsForMessage,
                 activeIngredientHoverContent,
                 setIngredientForHover,
