@@ -164,7 +164,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     }`;
 
     const filteredTools = availableTools?.filter(
-        (tool) => tool.type === message.type
+        (tool) => tool.type === "target-message"
     );
 
     return (

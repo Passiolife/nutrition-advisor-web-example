@@ -102,7 +102,7 @@ Lets chat!`,
             const tools = await client.getAvailableTools();
             setAvailableTools(tools);
 
-            await client.beginConversationThread();
+            await client.beginThread();
 
             const storedProfileData = localStorage.getItem("userProfile");
             if (storedProfileData) {
@@ -252,7 +252,7 @@ Lets chat!`,
                 };
 
                 if (response.dataRequest) {
-                    switch (response.dataRequest?.Name) {
+                    switch (response.dataRequest?.name) {
                         case "DetectMealLogsRequired":
                             let ar = await apiClient.handleDataRequest(
                                 response,
