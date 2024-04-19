@@ -44,7 +44,7 @@ const TooltipCard: React.FC<
                         (nutritionPreview.calories /
                             nutritionPreview.portion.weight.value) *
                         weightGrams
-                    ).toFixed(0)}`}
+                    ).toFixed(0)} kcal`}
                 </div>
                 <div className="my-1">
                     <strong>Carbs:</strong>{" "}
@@ -52,7 +52,7 @@ const TooltipCard: React.FC<
                         (nutritionPreview.carbs /
                             nutritionPreview.portion.weight.value) *
                         weightGrams
-                    ).toFixed()} `}
+                    ).toFixed()} g`}
                 </div>
                 <div className="my-1">
                     <strong>Protein:</strong>{" "}
@@ -60,7 +60,7 @@ const TooltipCard: React.FC<
                         (nutritionPreview.protein /
                             nutritionPreview.portion.weight.value) *
                         weightGrams
-                    ).toFixed()}`}
+                    ).toFixed()} g`}
                 </div>
                 <div className="my-1">
                     <strong>Fat:</strong>{" "}
@@ -68,7 +68,7 @@ const TooltipCard: React.FC<
                         (nutritionPreview.fat /
                             nutritionPreview.portion.weight.value) *
                         weightGrams
-                    ).toFixed()}`}
+                    ).toFixed()} g`}
                 </div>
                 <div className="pt-6 text-xs">
                     Use{" "}
