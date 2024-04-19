@@ -7,6 +7,7 @@ import InputArea from "./InputArea";
 import MessageComponent from "./Message";
 import ProfileExample from "./ProfileExample";
 import AdvisorThinkingComponent from "./ThinkingIndicator";
+import { types } from "passio-nutrition-advisor-client";
 
 const Chat: React.FC = () => {
     const {
@@ -16,7 +17,8 @@ const Chat: React.FC = () => {
         sendMessage,
         availableTools,
         advisorThinking,
-        sendToolRequest,
+        sendTargetToolRequest,
+        sendVisionToolRequest,
         activeIngredientHoverContent,
     } = useContext(APIClientContext);
 
@@ -85,8 +87,11 @@ const Chat: React.FC = () => {
                                 toolName: string
                             ) => {
                                 availableTools.forEach((tool) => {
-                                    if (tool.name === toolName) {
-                                        sendToolRequest(messageId, tool);
+                                    if (
+                                        tool.type === "target" &&
+                                        tool.name === toolName
+                                    ) {
+                                        sendTargetToolRequest(messageId, tool);
                                     }
                                 });
                             }}
@@ -95,7 +100,23 @@ const Chat: React.FC = () => {
                     <div ref={messagesEndRef} />
                 </div>
                 {advisorThinking && <AdvisorThinkingComponent />}
-                <InputArea disable={false} onSend={sendMessage} />
+                <InputArea
+                    disable={false}
+                    onSend={sendMessage}
+                    onImageSend={(image: string) => {
+                        let tool = availableTools.find(
+                            (tool) => tool.name === "VisualFoodExtraction"
+                        );
+                        if (tool) {
+                            sendVisionToolRequest(
+                                {
+                                    image: image,
+                                } as types.AdvisorIncomingVisionRequest,
+                                tool
+                            );
+                        }
+                    }}
+                />
             </div>
             {isModalOpen && (
                 <ProfileExample
@@ -106,7 +127,7 @@ const Chat: React.FC = () => {
             {activeIngredientHoverContent && (
                 <TooltipCard
                     ingredientData={activeIngredientHoverContent.item}
-                    className="context-menu absolute bg-white shadow-lg rounded-lg p-1 z-10 w-56 flex flex-col justify-start items-start"
+                    className="context-menu absolute bg-white shadow-lg rounded-lg p-1 z-10 w-72 flex flex-col justify-start items-start"
                     style={{
                         position: "fixed",
                         left: activeIngredientHoverContent.xpos + 20,
