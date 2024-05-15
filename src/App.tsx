@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import "./App.css";
 import Chat from "./components/Chat";
 import { APIClientProvider } from "./context/AdvisorClientContext";
@@ -7,10 +7,19 @@ import "./tailwind.css";
 function App() {
     const searchParams = new URLSearchParams(window.location.search);
     const initialLicenseKey = searchParams.get("licenseKey");
-    const decodedLicenseKey = initialLicenseKey
-        ? atob(initialLicenseKey)
-        : null;
-    const [licenseKey, setLicenseKey] = useState(initialLicenseKey);
+    const demoFlag = searchParams.get("demo");
+    var decodedLicenseKey;
+    console.log(initialLicenseKey);
+    if (initialLicenseKey === "demo" || demoFlag !== "") {
+        decodedLicenseKey = process.env.REACT_APP_LICENSE_KEY;
+    } else {
+        decodedLicenseKey = initialLicenseKey ? atob(initialLicenseKey) : null;
+    }
+    const [licenseKey, setLicenseKey] = useState(decodedLicenseKey);
+
+    useEffect(() => {
+        console.log(licenseKey);
+    }, [licenseKey]);
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
