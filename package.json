@@ -10,20 +10,25 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.23.1",
     "react-scripts": "5.0.1",
     "tailwind": "^4.0.0",
     "typescript": "^4.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
-    "wt": "npx tailwindcss -i src/index.css -o ./src/tailwind.css --watch",
-    "bt": "npx tailwindcss src/index.css -o src/tailwind.css --minify",
-    "build": "source .env.production && eval $BUILD",
-    "build:dev": "source .env.production && eval $BUILD_PRODUCTION",
-    "build:production": "source .env.production && eval $BUILD_PRODUCTION",
-    "deploy-dev": "source .env.development && eval $DEPLOY_DEV",
-    "deploy-prod": "source .env.production && eval $DEPLOY_PROD",
-    "eject": "react-scripts eject"
+    "build": "sh -ac '. ./.env.${REACT_APP_ENV}; yarn run build:tailwind && react-scripts build'",
+    "build:dev": "REACT_APP_ENV=development yarn run build",
+    "watch:css": "npx tailwindcss -i src/index.css -o ./src/tailwind.css --watch",
+    "build:production": "REACT_APP_ENV=production yarn run build",
+    "build:tailwind": "npx tailwindcss src/index.css -o src/tailwind.css --minify",
+    "deploy-dev": "yarn build:dev && gcloud config set project passio-dev-env && gsutil -m -h \"Cache-Control:private, max-age=0, no-transform\" rsync -r build gs://passio-nutrition-advisor-dev",
+    "deploy-prod": "yarn build:production && gcloud config set project passio-prod-env && gsutil -m rsync -r build gs://passio-nutrition-advisor-demo",
+    "test": "npx playwright test",
+    "eject": "react-scripts eject",
+    "format": "prettier --write \"**/*.{js,jsx,json,md,tsx}\"",
+    "lint": "eslint ./",
+    "lint-fix": "eslint ./ --fix"
   },
   "eslintConfig": {
     "extends": [
@@ -31,10 +36,11 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@tailwindcss/forms": "latest",
     "@tailwindcss/typography": "latest",
     "autoprefixer": "^10.4.19",
-    "tailwindcss": "latest"
+    "tailwindcss": "^3.4.3"
   },
   "browserslist": {
     "production": [

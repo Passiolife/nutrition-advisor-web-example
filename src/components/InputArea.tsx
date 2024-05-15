@@ -1,5 +1,4 @@
-import React, { useContext, useState } from "react";
-import { APIClientContext } from "../context/AdvisorClientContext";
+import React, { useState } from "react";
 
 interface InputAreaProps {
     disable: boolean;
@@ -13,8 +12,6 @@ const InputArea: React.FC<InputAreaProps> = ({
     onImageSend,
 }) => {
     const [inputValue, setInputValue] = useState("");
-
-    const { availableTools } = useContext(APIClientContext);
 
     const handleSend = () => {
         if (inputValue.trim() !== "") {
